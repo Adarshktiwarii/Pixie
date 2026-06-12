@@ -118,9 +118,7 @@ export default function Passport() {
           <TabsTrigger value="medications" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
             <Activity className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Medications</span>
           </TabsTrigger>
-          <TabsTrigger value="conditions" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
-            <ClipboardList className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Conditions</span>
-          </TabsTrigger>
+
         </TabsList>
 
         <TabsContent value="vaccinations" className="mt-6">
