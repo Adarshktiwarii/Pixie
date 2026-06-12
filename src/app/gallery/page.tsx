@@ -52,7 +52,7 @@ export default function Gallery() {
           <p className="text-slate-500 mt-1">Track Pixie&apos;s growth and progress over time.</p>
         </div>
         <AddMemoryModal onAdd={handleAddMemory}>
-          <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-fit shadow-md">
+          <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-full sm:w-fit shadow-md">
             <Plus className="mr-2 h-4 w-4" /> Upload Photo
           </Button>
         </AddMemoryModal>

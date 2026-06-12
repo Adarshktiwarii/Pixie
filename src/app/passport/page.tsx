@@ -93,12 +93,12 @@ export default function Passport() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Medical Passport</h1>
           <p className="text-slate-500 mt-1">Official health records, vaccinations, and treatments.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handlePrint} className="rounded-xl border-slate-200">
-            <Printer className="mr-2 h-4 w-4" /> Print / PDF
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 w-full sm:w-auto">
+          <Button variant="outline" onClick={handlePrint} className="rounded-xl border-slate-200 w-full">
+            <Printer className="mr-2 h-4 w-4" /> Print
           </Button>
           <AddMedicalRecordModal onAdd={handleAddRecord}>
-            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-fit">
+            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-full">
               <Plus className="mr-2 h-4 w-4" /> Add Record
             </Button>
           </AddMedicalRecordModal>
@@ -108,18 +108,18 @@ export default function Passport() {
       <PrintablePassport profile={profile} vaccinations={vaccinations} deworming={deworming} medications={medications} />
 
       <Tabs defaultValue="vaccinations" className="w-full print:hidden">
-        <TabsList className="bg-white border border-slate-100 p-1 rounded-xl h-auto flex flex-wrap shadow-sm">
+        <TabsList className="bg-white border border-slate-100 p-1 rounded-xl h-auto w-full grid grid-cols-2 md:flex md:flex-wrap gap-1 shadow-sm">
           <TabsTrigger value="vaccinations" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
-            <Syringe className="h-4 w-4 mr-2" /> Vaccinations
+            <Syringe className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Vaccinations</span>
           </TabsTrigger>
           <TabsTrigger value="deworming" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
-            <Bug className="h-4 w-4 mr-2" /> Deworming
+            <Bug className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Deworming</span>
           </TabsTrigger>
           <TabsTrigger value="medications" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
-            <Activity className="h-4 w-4 mr-2" /> Medications
+            <Activity className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Medications</span>
           </TabsTrigger>
           <TabsTrigger value="conditions" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
-            <ClipboardList className="h-4 w-4 mr-2" /> Conditions
+            <ClipboardList className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Conditions</span>
           </TabsTrigger>
         </TabsList>
 

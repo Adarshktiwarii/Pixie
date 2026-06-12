@@ -58,8 +58,8 @@ export default function DocumentsVault() {
           <p className="text-slate-500 mt-1">Secure storage for all of Pixie&apos;s important files.</p>
         </div>
         <UploadDocumentModal onUpload={handleUpload}>
-          <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-fit">
-            <Upload className="mr-2 h-4 w-4" /> Upload File
+          <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-full sm:w-fit shadow-sm">
+            <Upload className="mr-2 h-4 w-4" /> Upload Document
           </Button>
         </UploadDocumentModal>
       </div>

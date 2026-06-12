@@ -45,7 +45,7 @@ export default function GrowthTracker() {
           <p className="text-slate-500 mt-1">Monitor weight, height, and body condition.</p>
         </div>
         <LogWeightModal onLog={handleLogWeight}>
-          <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-fit">
+          <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-full sm:w-fit">
             <Plus className="mr-2 h-4 w-4" /> Add Weight
           </Button>
         </LogWeightModal>
