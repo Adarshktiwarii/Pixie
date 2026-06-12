@@ -130,7 +130,7 @@ export default function Gallery() {
                         variant="ghost" 
                         size="icon" 
                         onClick={() => handleDelete(memory.id)}
-                        className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white shadow-sm border border-slate-100 text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                        className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white shadow-sm border border-slate-100 text-slate-400 hover:text-red-600 hover:bg-red-50 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-20"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

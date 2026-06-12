@@ -53,7 +53,7 @@ export function EditProfileModal({ children, currentProfile, onSave }: { childre
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={children as React.ReactElement} />
-      <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white border-slate-100 p-0 overflow-hidden shadow-xl">
+      <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-y-auto rounded-2xl bg-white border-slate-100 p-0 shadow-xl">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-slate-800">Edit Profile</DialogTitle>

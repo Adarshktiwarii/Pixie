@@ -12,7 +12,7 @@ export function ViewDocumentModal({ children, doc }: { children: React.ReactNode
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={children as React.ReactElement} />
-      <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col rounded-2xl bg-white border-slate-100 p-0 overflow-hidden shadow-xl">
+      <DialogContent className="sm:max-w-[800px] w-[95vw] h-[80vh] flex flex-col rounded-2xl bg-white border-slate-100 p-0 shadow-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
           <DialogTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
             <Eye className="h-5 w-5 text-amber-500" /> {doc.name}

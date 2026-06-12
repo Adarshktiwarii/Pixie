@@ -108,7 +108,7 @@ export default function HomeDashboard() {
         <h2 className="text-xl font-semibold mb-4 text-slate-800">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <AddMedicalRecordModal onAdd={handleAddRecord}>
-            <Button variant="outline" className="h-auto flex-col gap-2 py-4 rounded-2xl bg-white shadow-sm hover:bg-slate-50 border-slate-100">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4 rounded-2xl bg-white shadow-sm hover:bg-slate-50 border-slate-100">
               <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
                 <Plus className="h-5 w-5" />
               </div>
@@ -116,7 +116,7 @@ export default function HomeDashboard() {
             </Button>
           </AddMedicalRecordModal>
           <UploadDocumentModal onUpload={handleUploadDoc}>
-            <Button variant="outline" className="h-auto flex-col gap-2 py-4 rounded-2xl bg-white shadow-sm hover:bg-slate-50 border-slate-100">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4 rounded-2xl bg-white shadow-sm hover:bg-slate-50 border-slate-100">
               <div className="bg-emerald-100 text-emerald-600 p-3 rounded-full">
                 <Upload className="h-5 w-5" />
               </div>
@@ -124,7 +124,7 @@ export default function HomeDashboard() {
             </Button>
           </UploadDocumentModal>
           <LogWeightModal onLog={handleLogWeight}>
-            <Button variant="outline" className="h-auto flex-col gap-2 py-4 rounded-2xl bg-white shadow-sm hover:bg-slate-50 border-slate-100">
+            <Button variant="outline" className="w-full h-auto flex-col gap-2 py-4 rounded-2xl bg-white shadow-sm hover:bg-slate-50 border-slate-100">
               <div className="bg-amber-100 text-amber-600 p-3 rounded-full">
                 <Activity className="h-5 w-5" />
               </div>

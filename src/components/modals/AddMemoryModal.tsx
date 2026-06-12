@@ -88,7 +88,7 @@ export function AddMemoryModal({ children, onAdd }: AddMemoryModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={children as React.ReactElement} />
-      <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white border-slate-100 shadow-xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[425px] w-[95vw] max-h-[90vh] overflow-y-auto rounded-2xl bg-white border-slate-100 shadow-xl p-0">
         <DialogHeader className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <DialogTitle className="text-xl font-semibold text-slate-800 flex items-center gap-2">
             <ImageIcon className="h-5 w-5 text-amber-500" /> Upload Memory
