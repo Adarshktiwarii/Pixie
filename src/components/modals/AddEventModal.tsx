@@ -47,7 +47,7 @@ export function AddEventModal({ children, onAdd, initialData }: { children: Reac
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={children} />
+      <DialogTrigger render={children as React.ReactElement} />
       <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white border-slate-100 p-0 overflow-hidden shadow-xl">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <DialogHeader>
@@ -87,7 +87,7 @@ export function AddEventModal({ children, onAdd, initialData }: { children: Reac
             <Label htmlFor="category" className="text-sm font-medium text-slate-700 flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate-400" /> Category
             </Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={(val) => setCategory(val || "")}>
               <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:ring-amber-500/20 focus:border-amber-500">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>

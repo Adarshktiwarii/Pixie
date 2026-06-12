@@ -43,7 +43,7 @@ export function LogWeightModal({ children, onLog, initialData }: { children: Rea
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={children} />
+      <DialogTrigger render={children as React.ReactElement} />
       <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white border-slate-100 p-0 overflow-hidden shadow-xl">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <DialogHeader>
