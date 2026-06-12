@@ -30,6 +30,19 @@ export default function GrowthTracker() {
     toast.error("Weight log deleted", { style: { background: '#fef2f2', border: '1px solid #fee2e2', color: '#ef4444' } });
   };
 
+  const sortedData = [...growthData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const currentWeight = sortedData.length > 0 ? sortedData[sortedData.length - 1].weight : "--";
+  
+  let growthTrendStr = "--";
+  if (sortedData.length > 1) {
+    const last = sortedData[sortedData.length - 1].weight;
+    const prev = sortedData[sortedData.length - 2].weight;
+    const diff = last - prev;
+    growthTrendStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+  }
+
+  const targetWeight = "--";
+
   if (!isLoaded) return <div className="p-8 text-center text-slate-500 animate-pulse">Loading Growth Data...</div>;
 
   return (
@@ -57,7 +70,7 @@ export default function GrowthTracker() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-1">Current Weight</p>
-                <p className="text-3xl font-bold text-slate-900">4.5 <span className="text-lg text-slate-500 font-normal">kg</span></p>
+                <p className="text-3xl font-bold text-slate-900">{currentWeight} <span className="text-lg text-slate-500 font-normal">kg</span></p>
               </div>
               <div className="bg-amber-100 text-amber-600 p-3 rounded-xl">
                 <Scale className="h-6 w-6" />
@@ -71,8 +84,8 @@ export default function GrowthTracker() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-1">Growth Trend</p>
-                <p className="text-3xl font-bold text-emerald-600">+1.3 <span className="text-lg font-normal">kg</span></p>
-                <p className="text-xs text-slate-500 mt-1">Since last month</p>
+                <p className="text-3xl font-bold text-emerald-600">{growthTrendStr} <span className="text-lg font-normal">kg</span></p>
+                <p className="text-xs text-slate-500 mt-1">Since last log</p>
               </div>
               <div className="bg-emerald-100 text-emerald-600 p-3 rounded-xl">
                 <TrendingUp className="h-6 w-6" />
@@ -86,8 +99,8 @@ export default function GrowthTracker() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm font-medium text-slate-500 mb-1">Target Adult Weight</p>
-                <p className="text-3xl font-bold text-slate-900">~27 <span className="text-lg text-slate-500 font-normal">kg</span></p>
-                <p className="text-xs text-slate-500 mt-1">Based on breed average</p>
+                <p className="text-3xl font-bold text-slate-900">{targetWeight} <span className="text-lg text-slate-500 font-normal">kg</span></p>
+                <p className="text-xs text-slate-500 mt-1">Not Set</p>
               </div>
               <div className="bg-amber-100 text-amber-600 p-3 rounded-xl">
                 <Target className="h-6 w-6" />
