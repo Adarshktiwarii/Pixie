@@ -94,11 +94,11 @@ export default function Passport() {
           <p className="text-slate-500 mt-1">Official health records, vaccinations, and treatments.</p>
         </div>
         <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 w-full sm:w-auto">
-          <Button variant="outline" onClick={handlePrint} className="rounded-xl border-slate-200 w-full">
+          <Button variant="outline" onClick={handlePrint} className="rounded-xl border-slate-200 w-full sm:w-auto">
             <Printer className="mr-2 h-4 w-4" /> Print
           </Button>
           <AddMedicalRecordModal onAdd={handleAddRecord}>
-            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-full">
+            <Button className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" /> Add Record
             </Button>
           </AddMedicalRecordModal>
