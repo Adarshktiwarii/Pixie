@@ -35,98 +35,139 @@ const defaultProfile = {
   name: "Pixie", breed: "English Golden Retriever", microchip: "981020000123456", reg: "KCI-2026-ENG-0987", dob: "2026-04-10", gender: "Female"
 };
 
-// Generic sync hook
-function useSyncTable<T extends { id: string }>(
+const supabase = createClient();
+
+// Mappers
+const dbToEvent = (d: any): Event => ({ id: d.id, date: d.date, title: d.title, type: d.type, description: d.description || '', iconName: d.icon_name || 'Heart', color: d.color || '', attachments: d.attachments || 0 });
+const dbToVax = (d: any): Vaccination => ({ id: d.id, name: d.name, date: d.date, nextDue: d.next_due || '', status: d.status || '', vet: d.vet || '' });
+const dbToDew = (d: any): Deworming => ({ id: d.id, product: d.product, date: d.date, nextDue: d.next_due || '', status: d.status || '', weight: d.weight || '' });
+const dbToMed = (d: any): Medication => ({ id: d.id, name: d.name, dose: d.dose || '', frequency: d.frequency || '', condition: d.condition || '', status: d.status || '' });
+const dbToDoc = (d: any): Document => ({ id: d.id, name: d.name, category: d.category || '', type: d.type || '', size: d.size || '', date: d.date || '', dataUrl: d.file_url || '' });
+const dbToGro = (d: any): GrowthLog => ({ id: d.id, date: d.date, weight: Number(d.weight) || 0 });
+const dbToMem = (d: any): Memory => ({ id: d.id, imageBase64: d.image_url || '', date: d.date, age: d.age || '', caption: d.caption || '' });
+
+// Realtime Sync Hook
+function useRealtimeTable<T extends { id: string }>(
   tableName: string, 
-  data: T[], 
   user: any, 
   isLoaded: boolean, 
-  mapToDb: (item: T) => any
+  mapToDb: (item: T) => any,
+  mapFromDb: (dbItem: any) => T
 ) {
-  const prevRef = useRef(data);
-  const supabase = createClient();
-  
+  const [_data, _setData] = useState<T[]>([]);
+
+  // Exposed to UI: Updates local state immediately, then pushes diff to Supabase
+  const setData = (action: React.SetStateAction<T[]>) => {
+    _setData(prev => {
+      const next: T[] = typeof action === 'function' ? (action as (prevState: T[]) => T[])(prev) : action;
+      
+      if (user) {
+        const newIds = new Set(next.map((item: T) => item.id));
+        const deletedItems = prev.filter((item: T) => !newIds.has(item.id));
+        const oldMap = new Map(prev.map((i: T) => [i.id, i]));
+        const toUpsert = next.filter((item: T) => JSON.stringify(item) !== JSON.stringify(oldMap.get(item.id)));
+        
+        if (deletedItems.length > 0) {
+          supabase.from(tableName).delete().in('id', deletedItems.map(d => d.id)).then();
+        }
+        if (toUpsert.length > 0) {
+          const upserts = toUpsert.map(item => ({ ...mapToDb(item), user_id: user.id }));
+          supabase.from(tableName).upsert(upserts).then();
+        }
+      }
+      
+      return next;
+    });
+  };
+
+  // Listens to Supabase Realtime to update local state without echoing
   useEffect(() => {
     if (!isLoaded || !user) return;
-    const prev = prevRef.current;
-    if (prev === data) return;
     
-    const newIds = new Set(data.map(item => item.id));
-    const deletedItems = prev.filter(item => !newIds.has(item.id));
-    
-    const oldMap = new Map(prev.map(i => [i.id, i]));
-    const toUpsert = data.filter(item => JSON.stringify(item) !== JSON.stringify(oldMap.get(item.id)));
-    
-    if (deletedItems.length > 0) {
-      supabase.from(tableName).delete().in('id', deletedItems.map(d => d.id)).then();
-    }
-    if (toUpsert.length > 0) {
-      const upserts = toUpsert.map(item => ({ ...mapToDb(item), user_id: user.id }));
-      supabase.from(tableName).upsert(upserts).then();
-    }
-    
-    prevRef.current = data;
-  }, [data, user, isLoaded, tableName]);
+    const channel = supabase.channel(`public:${tableName}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: tableName, filter: `user_id=eq.${user.id}` }, (payload) => {
+        _setData(currentData => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const newItem = mapFromDb(payload.new);
+            const exists = currentData.some(i => i.id === newItem.id);
+            if (exists) {
+              return currentData.map(i => i.id === newItem.id ? newItem : i);
+            } else {
+              return [...currentData, newItem];
+            }
+          } else if (payload.eventType === 'DELETE') {
+            return currentData.filter(i => i.id !== payload.old.id);
+          }
+          return currentData;
+        });
+      })
+      .subscribe();
 
-  return (loadedData: T[]) => {
-    prevRef.current = loadedData;
-  };
+    return () => { supabase.removeChannel(channel); };
+  }, [isLoaded, user, tableName]);
+
+  return { data: _data, setData, loadInitialData: _setData };
 }
 
 export function PixieProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
-  const [deworming, setDeworming] = useState<Deworming[]>([]);
-  const [medications, setMedications] = useState<Medication[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [growthData, setGrowthData] = useState<GrowthLog[]>([]);
-  const [profile, setProfile] = useState<Profile>(defaultProfile);
-  const [memories, setMemories] = useState<Memory[]>([]);
-  
   const [user, setUser] = useState<any>(null);
   const isAuthenticated = !!user;
 
-  const supabase = createClient();
-
-  // Sync Hooks
-  const resetEvents = useSyncTable('events', events, user, isLoaded, (item) => ({
-    id: item.id, date: item.date, title: item.title, type: item.type, description: item.description, icon_name: item.iconName, color: item.color, attachments: item.attachments
-  }));
-  const resetVaccinations = useSyncTable('vaccinations', vaccinations, user, isLoaded, (item) => ({
-    id: item.id, name: item.name, date: item.date, next_due: item.nextDue, status: item.status, vet: item.vet
-  }));
-  const resetDeworming = useSyncTable('deworming', deworming, user, isLoaded, (item) => ({
-    id: item.id, product: item.product, date: item.date, next_due: item.nextDue, status: item.status, weight: item.weight
-  }));
-  const resetMedications = useSyncTable('medications', medications, user, isLoaded, (item) => ({
-    id: item.id, name: item.name, dose: item.dose, frequency: item.frequency, condition: item.condition, status: item.status
-  }));
-  const resetDocuments = useSyncTable('documents', documents, user, isLoaded, (item) => ({
-    id: item.id, name: item.name, category: item.category, type: item.type, size: item.size, date: item.date, file_url: item.dataUrl || ""
-  }));
-  const resetGrowthData = useSyncTable('growth_logs', growthData, user, isLoaded, (item) => ({
-    id: item.id, date: item.date, weight: item.weight
-  }));
-  const resetMemories = useSyncTable('memories', memories, user, isLoaded, (item) => ({
-    id: item.id, image_url: item.imageBase64, date: item.date, age: item.age, caption: item.caption
-  }));
+  // Realtime Tables
+  const eventsTable = useRealtimeTable<Event>('events', user, isLoaded, 
+    (item) => ({ id: item.id, date: item.date, title: item.title, type: item.type, description: item.description, icon_name: item.iconName, color: item.color, attachments: item.attachments }),
+    dbToEvent
+  );
+  const vaccinationsTable = useRealtimeTable<Vaccination>('vaccinations', user, isLoaded, 
+    (item) => ({ id: item.id, name: item.name, date: item.date, next_due: item.nextDue, status: item.status, vet: item.vet }),
+    dbToVax
+  );
+  const dewormingTable = useRealtimeTable<Deworming>('deworming', user, isLoaded, 
+    (item) => ({ id: item.id, product: item.product, date: item.date, next_due: item.nextDue, status: item.status, weight: item.weight }),
+    dbToDew
+  );
+  const medicationsTable = useRealtimeTable<Medication>('medications', user, isLoaded, 
+    (item) => ({ id: item.id, name: item.name, dose: item.dose, frequency: item.frequency, condition: item.condition, status: item.status }),
+    dbToMed
+  );
+  const documentsTable = useRealtimeTable<Document>('documents', user, isLoaded, 
+    (item) => ({ id: item.id, name: item.name, category: item.category, type: item.type, size: item.size, date: item.date, file_url: item.dataUrl || "" }),
+    dbToDoc
+  );
+  const growthTable = useRealtimeTable<GrowthLog>('growth_logs', user, isLoaded, 
+    (item) => ({ id: item.id, date: item.date, weight: item.weight }),
+    dbToGro
+  );
+  const memoriesTable = useRealtimeTable<Memory>('memories', user, isLoaded, 
+    (item) => ({ id: item.id, image_url: item.imageBase64, date: item.date, age: item.age, caption: item.caption }),
+    dbToMem
+  );
 
   // Profile Sync
-  const prevProfile = useRef(profile);
+  const [_profile, _setProfile] = useState<Profile>(defaultProfile);
+  const setProfile = (action: React.SetStateAction<Profile>) => {
+    _setProfile(prev => {
+      const next = typeof action === 'function' ? (action as Function)(prev) : action;
+      if (user) {
+        supabase.from('profiles').upsert({ user_id: user.id, name: next.name, breed: next.breed, microchip: next.microchip, reg: next.reg, dob: next.dob, gender: next.gender, avatar_url: next.avatarUrl }).then();
+      }
+      return next;
+    });
+  }
+
   useEffect(() => {
     if (!isLoaded || !user) return;
-    if (JSON.stringify(prevProfile.current) === JSON.stringify(profile)) return;
-    
-    supabase.from('profiles').upsert({
-      user_id: user.id,
-      name: profile.name, breed: profile.breed, microchip: profile.microchip, reg: profile.reg, dob: profile.dob, gender: profile.gender, avatar_url: profile.avatarUrl
-    }).then();
-    
-    prevProfile.current = profile;
-  }, [profile, user, isLoaded]);
+    const channel = supabase.channel('public:profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `user_id=eq.${user.id}` }, (payload) => {
+        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+          _setProfile({ name: payload.new.name, breed: payload.new.breed, microchip: payload.new.microchip, reg: payload.new.reg, dob: payload.new.dob, gender: payload.new.gender, avatarUrl: payload.new.avatar_url });
+        }
+      }).subscribe();
+    return () => { supabase.removeChannel(channel); }
+  }, [isLoaded, user]);
 
-  // Auth & Data Loading
+  // Auth & Initial Data Loading
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW registration failed: ', err));
@@ -151,61 +192,54 @@ export function PixieProvider({ children }: { children: React.ReactNode }) {
           supabase.from('profiles').select('*').eq('user_id', sessionUser.id).maybeSingle()
         ]);
 
-        const mappedEvt = (evt || []).map(d => ({ id: d.id, date: d.date, title: d.title, type: d.type, description: d.description, iconName: d.icon_name, color: d.color, attachments: d.attachments }));
-        const mappedVax = (vax || []).map(d => ({ id: d.id, name: d.name, date: d.date, nextDue: d.next_due, status: d.status, vet: d.vet }));
-        const mappedDew = (dew || []).map(d => ({ id: d.id, product: d.product, date: d.date, nextDue: d.next_due, status: d.status, weight: d.weight }));
-        const mappedMed = (med || []).map(d => ({ id: d.id, name: d.name, dose: d.dose, frequency: d.frequency, condition: d.condition, status: d.status }));
-        const mappedDoc = (doc || []).map(d => ({ id: d.id, name: d.name, category: d.category, type: d.type, size: d.size, date: d.date, dataUrl: d.file_url }));
-        const mappedGro = (gro || []).map(d => ({ id: d.id, date: d.date, weight: Number(d.weight) }));
-        const mappedMem = (mem || []).map(d => ({ id: d.id, imageBase64: d.image_url, date: d.date, age: d.age, caption: d.caption }));
-
-        setEvents(mappedEvt); resetEvents(mappedEvt);
-        setVaccinations(mappedVax); resetVaccinations(mappedVax);
-        setDeworming(mappedDew); resetDeworming(mappedDew);
-        setMedications(mappedMed); resetMedications(mappedMed);
-        setDocuments(mappedDoc); resetDocuments(mappedDoc);
-        setGrowthData(mappedGro); resetGrowthData(mappedGro);
-        setMemories(mappedMem); resetMemories(mappedMem);
+        eventsTable.loadInitialData((evt || []).map(dbToEvent));
+        vaccinationsTable.loadInitialData((vax || []).map(dbToVax));
+        dewormingTable.loadInitialData((dew || []).map(dbToDew));
+        medicationsTable.loadInitialData((med || []).map(dbToMed));
+        documentsTable.loadInitialData((doc || []).map(dbToDoc));
+        growthTable.loadInitialData((gro || []).map(dbToGro));
+        memoriesTable.loadInitialData((mem || []).map(dbToMem));
 
         if (prof) {
-          const loadedProfile = { name: prof.name, breed: prof.breed, microchip: prof.microchip, reg: prof.reg, dob: prof.dob, gender: prof.gender, avatarUrl: prof.avatar_url };
-          setProfile(loadedProfile);
-          prevProfile.current = loadedProfile;
+          _setProfile({ name: prof.name, breed: prof.breed, microchip: prof.microchip, reg: prof.reg, dob: prof.dob, gender: prof.gender, avatarUrl: prof.avatar_url });
         } else {
-          // Create initial profile
           await supabase.from('profiles').insert({ user_id: sessionUser.id, ...defaultProfile });
         }
       } else {
         // Clear data on logout
-        setEvents([]); setVaccinations([]); setDeworming([]); setMedications([]);
-        setDocuments([]); setGrowthData([]); setMemories([]); setProfile(defaultProfile);
+        eventsTable.loadInitialData([]); vaccinationsTable.loadInitialData([]); dewormingTable.loadInitialData([]); medicationsTable.loadInitialData([]);
+        documentsTable.loadInitialData([]); growthTable.loadInitialData([]); memoriesTable.loadInitialData([]); _setProfile(defaultProfile);
       }
 
-      // Small delay to ensure state updates commit before syncing resumes
-      setTimeout(() => setIsLoaded(true), 100);
+      setIsLoaded(true);
     };
 
-    // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       loadData(session?.user || null);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       loadData(session?.user || null);
     });
 
     return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = () => { /* Now handled by Supabase Auth */ };
+  const login = () => {};
   const logout = async () => { await supabase.auth.signOut(); };
 
   return (
     <PixieContext.Provider value={{
-      events, setEvents, vaccinations, setVaccinations, deworming, setDeworming,
-      medications, setMedications, documents, setDocuments, growthData, setGrowthData,
-      profile, setProfile, memories, setMemories, isLoaded, isAuthenticated, login, logout
+      events: eventsTable.data, setEvents: eventsTable.setData, 
+      vaccinations: vaccinationsTable.data, setVaccinations: vaccinationsTable.setData, 
+      deworming: dewormingTable.data, setDeworming: dewormingTable.setData,
+      medications: medicationsTable.data, setMedications: medicationsTable.setData, 
+      documents: documentsTable.data, setDocuments: documentsTable.setData, 
+      growthData: growthTable.data, setGrowthData: growthTable.setData,
+      profile: _profile, setProfile: setProfile, 
+      memories: memoriesTable.data, setMemories: memoriesTable.setData, 
+      isLoaded, isAuthenticated, login, logout
     }}>
       {children}
     </PixieContext.Provider>

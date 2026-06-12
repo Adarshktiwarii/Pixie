@@ -124,32 +124,31 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-card/80 px-2 backdrop-blur-lg md:hidden print:hidden overflow-x-auto gap-2">
-        {navigation.map((item) => {
+      <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-white/90 px-2 backdrop-blur-xl md:hidden print:hidden shadow-[0_-1px_10px_rgb(0,0,0,0.05)]">
+        {[
+          { name: "Home", href: "/", icon: Home },
+          { name: "Passport", href: "/passport", icon: FileText },
+          { name: "Pixie AI", href: "/ai", icon: Sparkles },
+          { name: "Gallery", href: "/gallery", icon: ImageIcon },
+          { name: "Profile", href: "/profile", icon: User },
+        ].map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-xs font-medium transition-colors",
+                "flex flex-col items-center justify-center gap-1 rounded-xl p-2 w-16 h-14 transition-all duration-300",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-amber-600 scale-110"
+                  : "text-slate-400 hover:text-slate-600"
               )}
             >
-              <item.icon className="h-5 w-5" />
-              <span className="sr-only">{item.name}</span>
+              <item.icon className={cn("h-6 w-6 transition-transform", isActive && "stroke-[2.5px]")} />
+              <span className={cn("text-[10px] font-medium transition-all", isActive ? "opacity-100" : "opacity-0 h-0")}>{item.name}</span>
             </Link>
           );
         })}
-        <button
-          onClick={() => { logout(); router.push("/login"); }}
-          className="flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-xs font-medium text-muted-foreground transition-colors hover:text-red-600"
-        >
-          <LogOut className="h-5 w-5" />
-          <span className="sr-only">Log Out</span>
-        </button>
       </nav>
     </div>
   );

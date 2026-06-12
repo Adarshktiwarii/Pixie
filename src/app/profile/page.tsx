@@ -1,18 +1,21 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EditProfileModal } from "@/components/modals/EditProfileModal";
-import { Activity, Calendar, Hash, MapPin, Shield, Tag, User, Camera, Bone, HeartPulse, Edit2, Plane, Search } from "lucide-react";
+import { Activity, Calendar, Hash, MapPin, Shield, Tag, User, Camera, Bone, HeartPulse, Edit2, Plane, Search, Users, FolderOpen, LogOut } from "lucide-react";
 import { usePixie } from "@/lib/context";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
-  const { profile, setProfile } = usePixie();
+  const router = useRouter();
+  const { profile, setProfile, logout } = usePixie();
 
   const handleSaveProfile = (updatedProfile: any) => {
     setProfile(updatedProfile);
@@ -141,6 +144,33 @@ export default function Profile() {
                   <Button variant="outline" size="sm" className="rounded-lg">Copy</Button>
                 </div>
               </dl>
+            </CardContent>
+          </Card>
+
+          {/* Settings & Navigation for Mobile */}
+          <Card className="rounded-2xl border-slate-100 shadow-sm md:hidden">
+            <CardHeader className="pb-2 border-b border-slate-100">
+              <CardTitle className="text-xl text-slate-800">More Tools</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="grid grid-cols-2 gap-4 p-4">
+                <Link href="/growth" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <Activity className="h-6 w-6 text-amber-600" />
+                  <span className="text-sm font-medium">Growth Track</span>
+                </Link>
+                <Link href="/contacts" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <Users className="h-6 w-6 text-indigo-600" />
+                  <span className="text-sm font-medium">Contacts</span>
+                </Link>
+                <Link href="/documents" className="flex flex-col items-center gap-2 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                  <FolderOpen className="h-6 w-6 text-blue-600" />
+                  <span className="text-sm font-medium">Vault</span>
+                </Link>
+                <button onClick={() => { logout(); router.push('/login'); }} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-rose-100 bg-rose-50/50 hover:bg-rose-50 transition-colors">
+                  <LogOut className="h-6 w-6 text-rose-600" />
+                  <span className="text-sm font-medium text-rose-600">Log Out</span>
+                </button>
+              </div>
             </CardContent>
           </Card>
         </div>
