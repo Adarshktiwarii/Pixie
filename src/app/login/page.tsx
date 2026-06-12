@@ -164,29 +164,30 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Hero Image / Branding */}
-      <div className="hidden lg:flex flex-1 relative bg-amber-50 items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-orange-500/10 mix-blend-multiply" />
-          <div className="absolute top-0 right-0 -translate-y-12 translate-x-1/3 w-96 h-96 bg-amber-200/40 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/4 w-[500px] h-[500px] bg-orange-200/40 rounded-full blur-3xl" />
-        </div>
+      <div className="hidden lg:flex flex-1 relative items-center justify-center overflow-hidden bg-slate-900">
+        <img 
+          src="/golden.png" 
+          alt="Golden Retriever Puppy" 
+          className="absolute inset-0 w-full h-full object-cover" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent" />
         
-        <div className="relative z-10 max-w-lg text-center px-8">
-          <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-white/40 mb-8 inline-block transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+        <div className="relative z-10 max-w-lg text-center px-8 mt-auto mb-24">
+          <div className="bg-white/10 backdrop-blur-md p-6 rounded-3xl border border-white/20 mb-8 inline-block shadow-2xl">
             <div className="flex gap-4 items-center">
-              <div className="h-16 w-16 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
-                <PawPrint className="h-8 w-8 text-amber-600" />
+              <div className="h-14 w-14 bg-amber-500 rounded-2xl flex items-center justify-center shadow-inner">
+                <PawPrint className="h-7 w-7 text-white" />
               </div>
               <div className="text-left">
-                <h3 className="font-bold text-slate-900 text-lg">Pixie Passport</h3>
-                <p className="text-slate-500">Your pet's lifelong companion</p>
+                <h3 className="font-bold text-white text-lg leading-tight">Pixie Passport</h3>
+                <p className="text-amber-200 text-sm font-medium">Your pet's lifelong companion</p>
               </div>
             </div>
           </div>
-          <h2 className="text-4xl font-bold tracking-tight text-slate-900 mb-4">
-            Everything your pet needs, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">in one place.</span>
+          <h2 className="text-4xl font-bold tracking-tight text-white mb-4">
+            Everything your pet needs, <span className="text-amber-400">in one place.</span>
           </h2>
-          <p className="text-lg text-slate-600">
+          <p className="text-lg text-slate-300">
             Manage medical records, track growth milestones, and keep all important documents securely stored and instantly synced to the cloud.
           </p>
         </div>
