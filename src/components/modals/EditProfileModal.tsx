@@ -13,6 +13,7 @@ export function EditProfileModal({ children, currentProfile, onSave }: { childre
   const [breed, setBreed] = useState(currentProfile?.breed || "English Golden Retriever");
   const [microchip, setMicrochip] = useState(currentProfile?.microchip || "981020000123456");
   const [reg, setReg] = useState(currentProfile?.reg || "KCI-2026-ENG-0987");
+  const [bloodGroup, setBloodGroup] = useState(currentProfile?.bloodGroup || "DEA 1.1 Positive");
   const [avatarUrl, setAvatarUrl] = useState(currentProfile?.avatarUrl || "");
   const [fileError, setFileError] = useState("");
 
@@ -44,6 +45,7 @@ export function EditProfileModal({ children, currentProfile, onSave }: { childre
         breed,
         microchip,
         reg,
+        bloodGroup,
         avatarUrl
       });
     }
@@ -132,6 +134,18 @@ export function EditProfileModal({ children, currentProfile, onSave }: { childre
               value={reg}
               onChange={(e) => setReg(e.target.value)}
               className="h-11 rounded-xl bg-slate-50 border-transparent focus-visible:bg-white focus-visible:ring-amber-500/20 focus-visible:border-amber-500 font-mono"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bloodGroup" className="text-sm font-medium text-slate-700 flex items-center gap-2">
+              <User className="h-4 w-4 text-slate-400" /> Blood Group
+            </Label>
+            <Input 
+              id="bloodGroup" 
+              value={bloodGroup}
+              onChange={(e) => setBloodGroup(e.target.value)}
+              className="h-11 rounded-xl bg-slate-50 border-transparent focus-visible:bg-white focus-visible:ring-amber-500/20 focus-visible:border-amber-500"
             />
           </div>
 
