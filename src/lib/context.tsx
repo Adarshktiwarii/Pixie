@@ -1,8 +1,10 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Heart, Syringe, Sparkles, FileText } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
+// Types
 export type Event = { id: string; date: string; title: string; type: string; description: string; iconName: string; color: string; attachments: number; };
 export type Vaccination = { id: string; name: string; date: string; nextDue: string; status: string; vet: string; };
 export type Deworming = { id: string; product: string; date: string; nextDue: string; status: string; weight: string; };
@@ -29,116 +31,181 @@ interface PixieContextType {
 
 const PixieContext = createContext<PixieContextType | undefined>(undefined);
 
-const defaultEvents = [
-  { id: "e1", date: "Jun 12, 2026", title: "First Day Home", type: "milestone", description: "Pixie joined our family today!", iconName: "Heart", color: "bg-rose-100 text-rose-600", attachments: 0 },
-  { id: "e2", date: "May 26, 2026", title: "Microchipped", type: "health", description: "Microchip implanted and registered with KCI.", iconName: "Syringe", color: "bg-amber-100 text-amber-600", attachments: 0 },
-  { id: "e3", date: "May 26, 2026", title: "First Vaccination", type: "health", description: "Nobivac DHPPi administered.", iconName: "Syringe", color: "bg-amber-100 text-amber-600", attachments: 1 },
-  { id: "e4", date: "Apr 10, 2026", title: "Born", type: "milestone", description: "Pixie was born! A healthy English Golden Retriever pup.", iconName: "Sparkles", color: "bg-orange-100 text-orange-600", attachments: 0 }
-];
-
-const defaultVaccinations = [
-  { id: "v1", name: "Nobivac DHPPI", date: "Jun 04, 2026", nextDue: "Jun 25, 2026", status: "Completed", vet: "Dr Yatish Gowda" },
-  { id: "v2", name: "Nobivac L4", date: "Jun 04, 2026", nextDue: "None", status: "Completed", vet: "Dr Yatish Gowda" },
-  { id: "v3", name: "Rabies Booster", date: "-", nextDue: "Sep 25, 2026", status: "Upcoming", vet: "-" },
-];
-
-const defaultDeworming = [
-  { id: "d1", product: "Drontal Plus", date: "May 26, 2026", nextDue: "Jun 25, 2026", status: "Completed", weight: "3.2 kg" },
-];
-
-const defaultMedications = [
-  { id: "m1", name: "Digyton Plus", dose: "10 drops", frequency: "Twice daily", condition: "Eye Swelling", status: "Active" },
-];
-
-const defaultDocuments = [
-  { id: "doc1", name: "Nobivac_Certificate_Jun2026.pdf", category: "Vaccinations", type: "pdf", size: "1.2 MB", date: "Jun 04, 2026" },
-  { id: "doc2", name: "Digyton_Prescription.jpg", category: "Prescriptions", type: "image", size: "845 KB", date: "Jun 12, 2026" },
-  { id: "doc3", name: "KCI_Registration.pdf", category: "Registration", type: "pdf", size: "2.1 MB", date: "May 26, 2026" },
-];
-
-const defaultGrowth = [
-  { id: "g1", date: "Apr 10", weight: 0.5 },
-  { id: "g2", date: "Apr 25", weight: 1.2 },
-  { id: "g3", date: "May 10", weight: 2.1 },
-  { id: "g4", date: "May 26", weight: 3.2 },
-  { id: "g5", date: "Jun 04", weight: 4.8 },
-  { id: "g6", date: "Jun 12", weight: 5.2 },
-];
-
 const defaultProfile = {
   name: "Pixie", breed: "English Golden Retriever", microchip: "981020000123456", reg: "KCI-2026-ENG-0987", dob: "2026-04-10", gender: "Female"
 };
 
-const defaultMemories: Memory[] = [
-  { id: "mem1", imageBase64: "/pixie.jpg", date: "Apr 10, 2026", age: "0 Weeks", caption: "The day I was born! A little golden potato." },
-  { id: "mem2", imageBase64: "/pixie.jpg", date: "Jun 12, 2026", age: "8 Weeks", caption: "Coming home with my new family." }
-];
+// Generic sync hook
+function useSyncTable<T extends { id: string }>(
+  tableName: string, 
+  data: T[], 
+  user: any, 
+  isLoaded: boolean, 
+  mapToDb: (item: T) => any
+) {
+  const prevRef = useRef(data);
+  const supabase = createClient();
+  
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    const prev = prevRef.current;
+    if (prev === data) return;
+    
+    const newIds = new Set(data.map(item => item.id));
+    const deletedItems = prev.filter(item => !newIds.has(item.id));
+    
+    const oldMap = new Map(prev.map(i => [i.id, i]));
+    const toUpsert = data.filter(item => JSON.stringify(item) !== JSON.stringify(oldMap.get(item.id)));
+    
+    if (deletedItems.length > 0) {
+      supabase.from(tableName).delete().in('id', deletedItems.map(d => d.id)).then();
+    }
+    if (toUpsert.length > 0) {
+      const upserts = toUpsert.map(item => ({ ...mapToDb(item), user_id: user.id }));
+      supabase.from(tableName).upsert(upserts).then();
+    }
+    
+    prevRef.current = data;
+  }, [data, user, isLoaded, tableName]);
+
+  return (loadedData: T[]) => {
+    prevRef.current = loadedData;
+  };
+}
 
 export function PixieProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [events, setEvents] = useState<Event[]>(defaultEvents);
-  const [vaccinations, setVaccinations] = useState<Vaccination[]>(defaultVaccinations);
-  const [deworming, setDeworming] = useState<Deworming[]>(defaultDeworming);
-  const [medications, setMedications] = useState<Medication[]>(defaultMedications);
-  const [documents, setDocuments] = useState<Document[]>(defaultDocuments);
-  const [growthData, setGrowthData] = useState<GrowthLog[]>(defaultGrowth);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [vaccinations, setVaccinations] = useState<Vaccination[]>([]);
+  const [deworming, setDeworming] = useState<Deworming[]>([]);
+  const [medications, setMedications] = useState<Medication[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [growthData, setGrowthData] = useState<GrowthLog[]>([]);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
-  const [memories, setMemories] = useState<Memory[]>(defaultMemories);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [memories, setMemories] = useState<Memory[]>([]);
+  
+  const [user, setUser] = useState<any>(null);
+  const isAuthenticated = !!user;
 
-  const login = () => setIsAuthenticated(true);
-  const logout = () => setIsAuthenticated(false);
+  const supabase = createClient();
 
-  // Load from local storage and register SW on mount
+  // Sync Hooks
+  const resetEvents = useSyncTable('events', events, user, isLoaded, (item) => ({
+    id: item.id, date: item.date, title: item.title, type: item.type, description: item.description, icon_name: item.iconName, color: item.color, attachments: item.attachments
+  }));
+  const resetVaccinations = useSyncTable('vaccinations', vaccinations, user, isLoaded, (item) => ({
+    id: item.id, name: item.name, date: item.date, next_due: item.nextDue, status: item.status, vet: item.vet
+  }));
+  const resetDeworming = useSyncTable('deworming', deworming, user, isLoaded, (item) => ({
+    id: item.id, product: item.product, date: item.date, next_due: item.nextDue, status: item.status, weight: item.weight
+  }));
+  const resetMedications = useSyncTable('medications', medications, user, isLoaded, (item) => ({
+    id: item.id, name: item.name, dose: item.dose, frequency: item.frequency, condition: item.condition, status: item.status
+  }));
+  const resetDocuments = useSyncTable('documents', documents, user, isLoaded, (item) => ({
+    id: item.id, name: item.name, category: item.category, type: item.type, size: item.size, date: item.date, file_url: item.dataUrl || ""
+  }));
+  const resetGrowthData = useSyncTable('growth_logs', growthData, user, isLoaded, (item) => ({
+    id: item.id, date: item.date, weight: item.weight
+  }));
+  const resetMemories = useSyncTable('memories', memories, user, isLoaded, (item) => ({
+    id: item.id, image_url: item.imageBase64, date: item.date, age: item.age, caption: item.caption
+  }));
+
+  // Profile Sync
+  const prevProfile = useRef(profile);
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+    if (JSON.stringify(prevProfile.current) === JSON.stringify(profile)) return;
+    
+    supabase.from('profiles').upsert({
+      user_id: user.id,
+      name: profile.name, breed: profile.breed, microchip: profile.microchip, reg: profile.reg, dob: profile.dob, gender: profile.gender, avatar_url: profile.avatarUrl
+    }).then();
+    
+    prevProfile.current = profile;
+  }, [profile, user, isLoaded]);
+
+  // Auth & Data Loading
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
-        console.log('Service Worker registration failed: ', err);
-      });
+      navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW registration failed: ', err));
     }
 
-    try {
-      const stored = localStorage.getItem('pixie_data');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setEvents(parsed.events || defaultEvents);
-        setVaccinations(parsed.vaccinations || defaultVaccinations);
-        setDeworming(parsed.deworming || defaultDeworming);
-        setMedications(parsed.medications || defaultMedications);
-        setDocuments(parsed.documents || defaultDocuments);
-        setGrowthData(parsed.growthData || defaultGrowth);
-        setProfile(parsed.profile || defaultProfile);
-        setMemories(parsed.memories || defaultMemories);
-        setIsAuthenticated(parsed.isAuthenticated || false);
+    const loadData = async (sessionUser: any) => {
+      setIsLoaded(false);
+      setUser(sessionUser);
+
+      if (sessionUser) {
+        const [
+          { data: evt }, { data: vax }, { data: dew }, { data: med }, 
+          { data: doc }, { data: gro }, { data: mem }, { data: prof }
+        ] = await Promise.all([
+          supabase.from('events').select('*'),
+          supabase.from('vaccinations').select('*'),
+          supabase.from('deworming').select('*'),
+          supabase.from('medications').select('*'),
+          supabase.from('documents').select('*'),
+          supabase.from('growth_logs').select('*'),
+          supabase.from('memories').select('*'),
+          supabase.from('profiles').select('*').eq('user_id', sessionUser.id).maybeSingle()
+        ]);
+
+        const mappedEvt = (evt || []).map(d => ({ id: d.id, date: d.date, title: d.title, type: d.type, description: d.description, iconName: d.icon_name, color: d.color, attachments: d.attachments }));
+        const mappedVax = (vax || []).map(d => ({ id: d.id, name: d.name, date: d.date, nextDue: d.next_due, status: d.status, vet: d.vet }));
+        const mappedDew = (dew || []).map(d => ({ id: d.id, product: d.product, date: d.date, nextDue: d.next_due, status: d.status, weight: d.weight }));
+        const mappedMed = (med || []).map(d => ({ id: d.id, name: d.name, dose: d.dose, frequency: d.frequency, condition: d.condition, status: d.status }));
+        const mappedDoc = (doc || []).map(d => ({ id: d.id, name: d.name, category: d.category, type: d.type, size: d.size, date: d.date, dataUrl: d.file_url }));
+        const mappedGro = (gro || []).map(d => ({ id: d.id, date: d.date, weight: Number(d.weight) }));
+        const mappedMem = (mem || []).map(d => ({ id: d.id, imageBase64: d.image_url, date: d.date, age: d.age, caption: d.caption }));
+
+        setEvents(mappedEvt); resetEvents(mappedEvt);
+        setVaccinations(mappedVax); resetVaccinations(mappedVax);
+        setDeworming(mappedDew); resetDeworming(mappedDew);
+        setMedications(mappedMed); resetMedications(mappedMed);
+        setDocuments(mappedDoc); resetDocuments(mappedDoc);
+        setGrowthData(mappedGro); resetGrowthData(mappedGro);
+        setMemories(mappedMem); resetMemories(mappedMem);
+
+        if (prof) {
+          const loadedProfile = { name: prof.name, breed: prof.breed, microchip: prof.microchip, reg: prof.reg, dob: prof.dob, gender: prof.gender, avatarUrl: prof.avatar_url };
+          setProfile(loadedProfile);
+          prevProfile.current = loadedProfile;
+        } else {
+          // Create initial profile
+          await supabase.from('profiles').insert({ user_id: sessionUser.id, ...defaultProfile });
+        }
+      } else {
+        // Clear data on logout
+        setEvents([]); setVaccinations([]); setDeworming([]); setMedications([]);
+        setDocuments([]); setGrowthData([]); setMemories([]); setProfile(defaultProfile);
       }
-    } catch (e) {
-      console.error("Failed to load data from localStorage", e);
-    }
-    setIsLoaded(true);
+
+      // Small delay to ensure state updates commit before syncing resumes
+      setTimeout(() => setIsLoaded(true), 100);
+    };
+
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      loadData(session?.user || null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      loadData(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Save to local storage whenever data changes
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem('pixie_data', JSON.stringify({
-      events, vaccinations, deworming, medications, documents, growthData, profile, memories, isAuthenticated
-    }));
-  }, [events, vaccinations, deworming, medications, documents, growthData, profile, memories, isAuthenticated, isLoaded]);
+  const login = () => { /* Now handled by Supabase Auth */ };
+  const logout = async () => { await supabase.auth.signOut(); };
 
   return (
     <PixieContext.Provider value={{
-      events, setEvents,
-      vaccinations, setVaccinations,
-      deworming, setDeworming,
-      medications, setMedications,
-      documents, setDocuments,
-      growthData, setGrowthData,
-      profile, setProfile,
-      memories, setMemories,
-      isLoaded,
-      isAuthenticated,
-      login,
-      logout
+      events, setEvents, vaccinations, setVaccinations, deworming, setDeworming,
+      medications, setMedications, documents, setDocuments, growthData, setGrowthData,
+      profile, setProfile, memories, setMemories, isLoaded, isAuthenticated, login, logout
     }}>
       {children}
     </PixieContext.Provider>
@@ -147,9 +214,7 @@ export function PixieProvider({ children }: { children: React.ReactNode }) {
 
 export function usePixie() {
   const context = useContext(PixieContext);
-  if (context === undefined) {
-    throw new Error("usePixie must be used within a PixieProvider");
-  }
+  if (context === undefined) throw new Error("usePixie must be used within a PixieProvider");
   return context;
 }
 

@@ -6,24 +6,51 @@ import { usePixie } from "@/lib/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PawPrint, Mail, Lock, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { PawPrint, Mail, Lock, Sparkles, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const router = useRouter();
   const { login } = usePixie();
+  const supabase = createClient();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate network delay for realism
-    setTimeout(() => {
-      login();
+    setError(null);
+    
+    try {
+      if (isSignUp) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (signUpError) throw signUpError;
+        
+        // Supabase might require email verification, but we'll assume it logs them in
+        // or we handle the error if it requires verification.
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError) throw signInError;
+      }
+      
+      login(); // update local context immediately to bypass checking momentarily
       router.push("/");
-    }, 800);
+    } catch (err: any) {
+      setError(err.message || "An error occurred during authentication");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -43,12 +70,31 @@ export default function LoginPage() {
               </div>
               <span className="text-2xl font-bold tracking-tight text-slate-900">Pixie</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">Welcome back</h1>
-            <p className="text-slate-500">Enter your details to access Pixie&apos;s records.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 mb-2">
+              {isSignUp ? "Create an account" : "Welcome back"}
+            </h1>
+            <p className="text-slate-500">
+              {isSignUp ? "Sign up to securely sync Pixie's records to the cloud." : "Enter your details to access Pixie's records."}
+            </p>
           </div>
 
           <div className="bg-white px-8 py-10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleAuth} className="space-y-6">
+              
+              <AnimatePresence mode="wait">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }} 
+                    animate={{ opacity: 1, height: 'auto' }} 
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-600 text-sm"
+                  >
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email Address</Label>
                 <div className="relative">
@@ -57,7 +103,7 @@ export default function LoginPage() {
                     id="email" 
                     type="email" 
                     required 
-                    placeholder="demo@pixie.com"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 h-12 rounded-xl bg-slate-50 border-transparent focus-visible:bg-white focus-visible:ring-amber-500/20 focus-visible:border-amber-500 transition-colors"
@@ -68,7 +114,9 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password" className="text-sm font-medium text-slate-700">Password</Label>
-                  <a href="#" className="text-sm font-medium text-amber-600 hover:text-amber-500">Forgot password?</a>
+                  {!isSignUp && (
+                    <a href="#" className="text-sm font-medium text-amber-600 hover:text-amber-500">Forgot password?</a>
+                  )}
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
@@ -91,17 +139,26 @@ export default function LoginPage() {
               >
                 {isLoading ? (
                   <span className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 animate-spin" /> Logging in...
+                    <Sparkles className="h-4 w-4 animate-spin" /> {isSignUp ? "Creating account..." : "Logging in..."}
                   </span>
                 ) : (
-                  "Sign In"
+                  isSignUp ? "Sign Up" : "Sign In"
                 )}
               </Button>
             </form>
           </div>
           
           <p className="mt-8 text-center text-sm text-slate-500">
-            Don&apos;t have an account? <a href="#" className="font-medium text-amber-600 hover:text-amber-500">Create one</a>
+            {isSignUp ? "Already have an account?" : "Don't have an account?"} {" "}
+            <button 
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError(null);
+              }} 
+              className="font-medium text-amber-600 hover:text-amber-500"
+            >
+              {isSignUp ? "Sign in" : "Create one"}
+            </button>
           </p>
         </motion.div>
       </div>
@@ -122,7 +179,7 @@ export default function LoginPage() {
               </div>
               <div className="text-left">
                 <h3 className="font-bold text-slate-900 text-lg">Pixie Passport</h3>
-                <p className="text-slate-500">Your pet&apos;s lifelong companion</p>
+                <p className="text-slate-500">Your pet's lifelong companion</p>
               </div>
             </div>
           </div>
@@ -130,7 +187,7 @@ export default function LoginPage() {
             Everything your pet needs, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-orange-600">in one place.</span>
           </h2>
           <p className="text-lg text-slate-600">
-            Manage medical records, track growth milestones, and keep all important documents securely stored and easily accessible.
+            Manage medical records, track growth milestones, and keep all important documents securely stored and instantly synced to the cloud.
           </p>
         </div>
       </div>
