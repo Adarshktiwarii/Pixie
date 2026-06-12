@@ -118,7 +118,9 @@ export default function Passport() {
           <TabsTrigger value="medications" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
             <Activity className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Medications</span>
           </TabsTrigger>
-
+          <TabsTrigger value="conditions" className="rounded-lg py-2.5 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 data-[state=active]:shadow-none">
+            <ClipboardList className="h-4 w-4 md:mr-2 md:mb-0 mb-1" /> <span className="text-[11px] md:text-sm">Conditions</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="vaccinations" className="mt-6">
@@ -257,14 +259,8 @@ export default function Passport() {
         </TabsContent>
 
         <TabsContent value="conditions" className="mt-6">
-          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
-            <div className="bg-white p-3 rounded-xl shadow-sm">
-              <ClipboardList className="h-8 w-8 text-amber-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">Left Eye Swelling</h3>
-              <p className="text-slate-600 mt-1">Diagnosed on June 12, 2026. Improving naturally. Prescribed Digyton Plus drops.</p>
-            </div>
+          <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center shadow-sm">
+            <p className="text-slate-500">No ongoing conditions recorded.</p>
           </div>
         </TabsContent>
       </Tabs>
